@@ -1,113 +1,119 @@
-# In this assignment, you'll be using the domain model from hw1 (found in the hw1-solution.sql file)
-# to create the database structure for "KMDB" (the Kellogg Movie Database).
-# The end product will be a report that prints the movies and the top-billed
-# cast for each movie in the database.
+# KMDB - Kellogg Movie Database
+# HW2 - Ruby on Rails version
 
-# To run this file, run the following command at your terminal prompt:
-# `rails runner kmdb.rb`
+# 1. Delete existing data
+Studio.destroy_all
+Movie.destroy_all
+Actor.destroy_all
+Role.destroy_all
+Agent.destroy_all
 
-# Requirements/assumptions
-#
-# - There will only be three movies in the database – the three films
-#   that make up Christopher Nolan's Batman trilogy.
-# - Movie data includes the movie title, year released, MPAA rating,
-#   and studio.
-# - There are many studios, and each studio produces many movies, but
-#   a movie belongs to a single studio.
-# - An actor can be in multiple movies.
-# - Everything you need to do in this assignment is marked with TODO!
-# - Note rubric explanation for appropriate use of external resources.
+# 2. Insert Studio
+new_studio = Studio.new
+new_studio["name"] = "Warner Bros."
+new_studio.save
+warner = Studio.find_by({ "name" => "Warner Bros." })
 
-# Rubric
-#
-# There are three deliverables for this assignment, all delivered within
-# this repository and submitted via GitHub and Canvas:
-# - Generate the models and migration files to match the domain model from hw1.
-#   Table and columns should match the domain model. Execute the migration
-#   files to create the tables in the database. (5 points)
-# - Insert the "Batman" sample data using ruby code. Do not use hard-coded ids.
-#   Delete any existing data beforehand so that each run of this script does not
-#   create duplicate data. (5 points)
-# - Query the data and loop through the results to display output similar to the
-#   sample "report" below. (10 points)
-# - You are welcome to use external resources for help with the assignment (including
-#   colleagues, AI, internet search, etc). However, the solution you submit must
-#   utilize the skills and strategies covered in class. Alternate solutions which
-#   do not demonstrate an understanding of the approaches used in class will receive
-#   significant deductions. Any concern should be raised with faculty prior to the due date.
+# 3. Insert Movies (Using studio["id"] to avoid hard-coded IDs)
+movies_list = [
+  { title: "Batman Begins", year: 2005, rating: "PG-13" },
+  { title: "The Dark Knight", year: 2008, rating: "PG-13" },
+  { title: "The Dark Knight Rises", year: 2012, rating: "PG-13" }
+]
 
-# Submission
-#
-# - "Use this template" to create a brand-new "hw2" repository in your
-#   personal GitHub account, e.g. https://github.com/<USERNAME>/hw2
-# - Do the assignment, committing and syncing often
-# - When done, commit and sync a final time before submitting the GitHub
-#   URL for the finished "hw2" repository as the "Website URL" for the
-#   Homework 2 assignment in Canvas
+for m_data in movies_list
+  movie = Movie.new
+  movie["title"] = m_data[:title]
+  movie["year_released"] = m_data[:year]
+  movie["mpaa_rating"] = m_data[:rating]
+  movie["studio_id"] = warner["id"]
+  movie.save
+end
 
-# Successful sample output is as shown:
+# 4. Insert Actors
+actor_names = [
+  "Christian Bale", "Michael Caine", "Liam Neeson", "Katie Holmes", "Gary Oldman", 
+  "Heath Ledger", "Aaron Eckhart", "Maggie Gyllenhaal", "Tom Hardy", 
+  "Joseph Gordon-Levitt", "Anne Hathaway"
+]
 
-# Movies
-# ======
-# Batman Begins          2005           PG-13  Warner Bros.
-# The Dark Knight        2008           PG-13  Warner Bros.
-# The Dark Knight Rises  2012           PG-13  Warner Bros.
+for name in actor_names
+  actor = Actor.new
+  actor["name"] = name
+  actor.save
+end
 
-# Top Cast
-# ========
-# Batman Begins          Christian Bale        Bruce Wayne
-# Batman Begins          Michael Caine         Alfred
-# Batman Begins          Liam Neeson           Ra's Al Ghul
-# Batman Begins          Katie Holmes          Rachel Dawes
-# Batman Begins          Gary Oldman           Commissioner Gordon
-# The Dark Knight        Christian Bale        Bruce Wayne
-# The Dark Knight        Heath Ledger          Joker
-# The Dark Knight        Aaron Eckhart         Harvey Dent
-# The Dark Knight        Michael Caine         Alfred
-# The Dark Knight        Maggie Gyllenhaal     Rachel Dawes
-# The Dark Knight Rises  Christian Bale        Bruce Wayne
-# The Dark Knight Rises  Gary Oldman           Commissioner Gordon
-# The Dark Knight Rises  Tom Hardy             Bane
-# The Dark Knight Rises  Joseph Gordon-Levitt  John Blake
-# The Dark Knight Rises  Anne Hathaway         Selina Kyle
+# 5. Insert Roles (Many-to-Many relationship)
+begins = Movie.find_by({ "title" => "Batman Begins" })
+dk = Movie.find_by({ "title" => "The Dark Knight" })
+dkr = Movie.find_by({ "title" => "The Dark Knight Rises" })
 
-# Represented by agent
-# ====================
-# Christian Bale
+roles_data = [
+  { movie: begins, actor: "Christian Bale", character: "Bruce Wayne" },
+  { movie: begins, actor: "Michael Caine", character: "Alfred" },
+  { movie: begins, actor: "Liam Neeson", character: "Ra's Al Ghul" },
+  { movie: begins, actor: "Katie Holmes", character: "Rachel Dawes" },
+  { movie: begins, actor: "Gary Oldman", character: "Commissioner Gordon" },
+  { movie: dk, actor: "Christian Bale", character: "Bruce Wayne" },
+  { movie: dk, actor: "Heath Ledger", character: "Joker" },
+  { movie: dk, actor: "Aaron Eckhart", character: "Harvey Dent" },
+  { movie: dk, actor: "Michael Caine", character: "Alfred" },
+  { movie: dk, actor: "Maggie Gyllenhaal", character: "Rachel Dawes" },
+  { movie: dkr, actor: "Christian Bale", character: "Bruce Wayne" },
+  { movie: dkr, actor: "Gary Oldman", character: "Commissioner Gordon" },
+  { movie: dkr, actor: "Tom Hardy", character: "Bane" },
+  { movie: dkr, actor: "Joseph Gordon-Levitt", character: "John Blake" },
+  { movie: dkr, actor: "Anne Hathaway", character: "Selina Kyle" }
+]
 
-# Delete existing data, so you'll start fresh each time this script is run.
-# Use `Model.destroy_all` code.
-# TODO!
+for r in roles_data
+  new_role = Role.new
+  new_role["movie_id"] = r[:movie]["id"]
+  new_role["actor_id"] = Actor.find_by({ "name" => r[:actor] })["id"]
+  new_role["character_name"] = r[:character]
+  new_role.save
+end
 
-# Generate models and tables, according to the domain model.
-# TODO!
+# 6. Assign Agent (Requirement 4)
+new_agent = Agent.new
+new_agent["name"] = "Ari Emanuel"
+new_agent.save
 
-# Insert data into the database that reflects the sample data shown above.
-# Do not use hard-coded foreign key IDs.
-# TODO!
+bale = Actor.find_by({ "name" => "Christian Bale" })
+bale["agent_id"] = new_agent["id"]
+bale.save
 
-# Prints a header for the movies output
+# --- PRINT REPORTS ---
+
 puts "Movies"
 puts "======"
 puts ""
 
-# Query the movies data and loop through the results to display the movies output.
-# TODO!
+all_movies = Movie.all
+for movie in all_movies
+  st = Studio.find_by({ "id" => movie["studio_id"] })
+  puts "#{movie["title"].ljust(22)} #{movie["year_released"]}  #{movie["mpaa_rating"].ljust(10)} #{st["name"]}"
+end
 
-# Prints a header for the cast output
 puts ""
 puts "Top Cast"
 puts "========"
 puts ""
 
-# Query the cast data and loop through the results to display the cast output for each movie.
-# TODO!
+all_roles = Role.all
+for role in all_roles
+  mov = Movie.find_by({ "id" => role["movie_id"] })
+  act = Actor.find_by({ "id" => role["actor_id"] })
+  puts "#{mov["title"].ljust(22)} #{act["name"].ljust(20)} #{role["character_name"]}"
+end
 
-# Prints a header for the agent's list of represented actors output
 puts ""
 puts "Represented by agent"
 puts "===================="
 puts ""
 
-# Query the actor data and loop through the results to display the agent's list of represented actors output.
-# TODO!
+ari = Agent.find_by({ "name" => "Ari Emanuel" })
+represented = Actor.where({ "agent_id" => ari["id"] })
+for actor in represented
+  puts actor["name"]
+end
